@@ -90,21 +90,45 @@ async function fetchVenue(venueID) {
 }
 
 async function fetchVenuePolicy(venueID, venueName) {
-  // Preferred: direct read by ID.
+  // Preferred: direct read by ID. A get() is checked against the rule
+  // using the DOCUMENT'S ACTUAL DATA, so no matching where() filter is
+  // needed here — unlike the query below.
   const directSnap = await getDoc(doc(db, "venuePolicies", venueID));
   if (directSnap.exists()) return directSnap.data();
 
-  // Fallback: query by venueName.
-  const q = query(collection(db, "venuePolicies"), where("venueName", "==", venueName), limit(1));
+  // Fallback: query by venueName. IMPORTANT: Firestore rejects an entire
+  // query up front unless its where() filters structurally guarantee every
+  // possible result satisfies the security rule — it does NOT run the
+  // query and then filter by the rule for you. The venuePolicies rule
+  // requires BOTH trustStatus == "curatedOfficial" AND status !=
+  // "unavailable", so both need to appear in the query. Combining an
+  // equality and an inequality filter on different fields may prompt
+  // Firestore to ask you to create a composite index the first time this
+  // path actually runs (a separate, clearer error than permission-denied,
+  // with a direct link to create it) — that's expected, not a bug, if it
+  // happens. This fallback only runs if the direct get() above misses, so
+  // it's untested in practice so far.
+  const q = query(
+    collection(db, "venuePolicies"),
+    where("venueName", "==", venueName),
+    where("trustStatus", "==", "curatedOfficial"),
+    where("status", "!=", "unavailable"),
+    limit(1)
+  );
   const snap = await getDocs(q);
   return firstDocData(snap);
 }
 
 async function fetchEventOverrides(venueID, eventID) {
+  // Same rule-matching requirement as above: the eventPolicyOverrides
+  // rule requires status != "unavailable", so the query must include that
+  // exact filter or Firestore rejects the whole query, not just filters
+  // out the non-matching documents.
   const q = query(
     collection(db, "eventPolicyOverrides"),
     where("venueID", "==", venueID),
-    where("eventID", "==", eventID)
+    where("eventID", "==", eventID),
+    where("status", "!=", "unavailable")
   );
   const snap = await getDocs(q);
   const overrides = [];
