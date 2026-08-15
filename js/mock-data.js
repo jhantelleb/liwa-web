@@ -182,18 +182,22 @@ const MOCK_VENUE = {
             location: "Choctaw Stadium",
             time: "10 AM – 6 PM",
             locationType: "exterior",
+            link: { label: "Weverse pickup", url: "https://weverseshop.io" },
           },
           {
             dateRange: { startDate: "2026-08-15", endDate: "2026-08-16" },
             location: "Choctaw Stadium (exterior)",
             time: "10 AM – 6:30 PM",
             locationType: "exterior",
+            link: { label: "Weverse pickup", url: "https://weverseshop.io" },
           },
           {
             dateRange: { startDate: "2026-08-15", endDate: "2026-08-16" },
             location: "AT&T Stadium (interior)",
             time: "GA doors – after show",
             locationType: "interior",
+            // No link for this one on purpose — interior merch has no
+            // dedicated URL in the source data, only the general fact below.
           },
         ],
         facts: [

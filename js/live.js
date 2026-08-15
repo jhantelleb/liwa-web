@@ -261,25 +261,43 @@ function renderMerch(venue) {
 
   if (summaryItems.length > 0) {
     const showDates = (venue.event.dates || []).slice();
-    const groups = new Map(); // ordered label -> items[]
+    // ordered label -> { items[], kind, starts[], ends[] } — kind/starts/ends
+    // let us show the real date(s) next to "Early"/"Show day(s)" labels
+    // instead of just the bare label, without re-deriving it from scratch.
+    const groups = new Map();
     summaryItems.forEach((item) => {
       const { kind } = classifyMerchDateRange(item.dateRange, showDates);
       const label = kind === "formatted" ? formatMerchDateRange(item.dateRange) : MERCH_GROUP_LABEL[kind];
-      if (!groups.has(label)) groups.set(label, []);
-      groups.get(label).push(item);
+      if (!groups.has(label)) groups.set(label, { items: [], kind, starts: [], ends: [] });
+      const group = groups.get(label);
+      group.items.push(item);
+      group.starts.push(item.dateRange.startDate);
+      group.ends.push(item.dateRange.endDate || item.dateRange.startDate);
     });
 
-    groups.forEach((items, label) => {
+    groups.forEach(({ items, kind, starts, ends }, label) => {
       const groupEl = document.createElement("div");
       groupEl.className = "merch-group";
       const heading = document.createElement("p");
       heading.className = "merch-group-label";
-      heading.textContent = label;
+      if (kind === "formatted") {
+        heading.textContent = label;
+      } else {
+        const groupRange = {
+          startDate: starts.slice().sort()[0],
+          endDate: ends.slice().sort()[ends.length - 1],
+        };
+        heading.textContent = `${label} · ${formatMerchDateRange(groupRange)}`;
+      }
       groupEl.appendChild(heading);
       items.forEach((item) => {
         const line = document.createElement("p");
         line.className = "merch-summary-line";
-        line.textContent = `${item.location} · ${item.time}`;
+        if (item.link && item.link.url) {
+          line.innerHTML = `${item.location} · ${item.time} — <a href="${item.link.url}" target="_blank" rel="noopener">${item.link.label || "Details"}</a>`;
+        } else {
+          line.textContent = `${item.location} · ${item.time}`;
+        }
         groupEl.appendChild(line);
       });
       container.appendChild(groupEl);

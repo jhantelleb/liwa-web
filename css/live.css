@@ -146,6 +146,13 @@
   margin: 0 0 4px;
 }
 
+.merch-summary-line a {
+  color: var(--amber-600);
+  text-decoration: none;
+}
+
+.merch-summary-line a:hover { text-decoration: underline; }
+
 .merch-details {
   border: 1px solid var(--border);
   border-radius: 10px;
