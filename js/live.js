@@ -106,27 +106,73 @@ function renderOrigin(origin) {
 }
 
 /**
- * Weather is gated on FirestoreShowTime.verified for doorsTime — not just
- * presence of a value. An unverified value or a fallbackText string is
- * NOT treated as good enough to anchor a forecast: "unknown stays unknown"
- * means we wait for a verified doors time, same as the app does.
+ * TODO: weather is not wired up yet on the web view. venue.weather is
+ * currently always null (see firestore-data.js) — there's no data source
+ * behind this section at all yet, verified doors time or not. Planned:
+ * OpenWeatherMap (WeatherKit, which the iOS app uses, has no public
+ * client-side API — it'd need a backend proxy, so a different provider is
+ * simpler for the web view). Until that's built, show an honest "in the
+ * works" message instead of implying this is blocked on data verification
+ * — it isn't; there's just no forecast source connected yet.
+ *
+ * Once OpenWeatherMap is wired up, the verified-doorsTime gate below still
+ * applies (still "unknown stays unknown" — no forecast without a verified
+ * anchor time), it just needs an `else` branch that actually renders
+ * venue.weather instead of always hitting this message.
  */
 function renderWeather(venue) {
   const block = document.getElementById("weather-block");
-  const shows = venue.event.shows || [];
-  const hasVerifiedDoors = shows.some((s) => s.doorsTime && s.doorsTime.verified && s.doorsTime.value);
 
-  if (!hasVerifiedDoors || !venue.weather) {
-    block.innerHTML = `
-      <p class="unknown-text">
-        Weather isn't available yet — doors time hasn't been verified for this event.
-        Once it's confirmed, we'll show a forecast anchored to that window instead of a
-        generic daily outlook.
-      </p>
-    `;
-    return;
+  block.innerHTML = `
+    <p class="unknown-text">
+      Weather isn't available here yet — check your preferred weather app in the meantime.
+    </p>
+  `;
+}
+
+const CROP_POSITION_MAP = {
+  center: "center",
+  top: "top",
+  bottom: "bottom",
+  left: "left",
+  right: "right",
+};
+
+/**
+ * Renders the venue's hero image + attribution, per the VenueArtwork
+ * shape. Gracefully does nothing if artwork/hero is missing — this isn't
+ * a "policy" fact needing a verification gate, just an optional asset.
+ */
+function renderHeroImage(venue) {
+  const artwork = venue.venue.artwork;
+  if (!artwork || !artwork.hero || !artwork.hero.url) return;
+
+  const wrap = document.getElementById("hero-image-wrap");
+  const img = document.getElementById("hero-image");
+  img.src = artwork.hero.url;
+  img.alt = `${venue.venue.venueName || "Venue"} — photo`;
+  img.style.objectPosition = CROP_POSITION_MAP[artwork.hero.cropPosition] || "center";
+
+  const attribution = artwork.attribution;
+  const attrEl = document.getElementById("hero-attribution");
+  if (attribution && (attribution.creator || attribution.sourceURL)) {
+    const parts = [];
+    if (attribution.creator) parts.push(attribution.creator);
+    if (attribution.licenseName) {
+      parts.push(
+        attribution.licenseURL
+          ? `<a href="${attribution.licenseURL}" target="_blank" rel="noopener">${attribution.licenseName}</a>`
+          : attribution.licenseName
+      );
+    }
+    let text = parts.join(", ");
+    if (attribution.sourceURL) {
+      text = `<a href="${attribution.sourceURL}" target="_blank" rel="noopener">${text || "Source"}</a>`;
+    }
+    attrEl.innerHTML = text;
   }
-  block.textContent = venue.weather;
+
+  wrap.hidden = false;
 }
 
 function formatDateRange(dates) {
@@ -144,6 +190,119 @@ function formatDateRange(dates) {
   const sameMonth = first[1] === last[1];
   const lastLabel = sameMonth ? dayOnly(last) : monthDay(last);
   return `${monthDay(first)}–${lastLabel}, ${year}`;
+}
+
+/**
+ * Merch lives at venues/{venueID}.transportation.modes[id == "merch"] —
+ * NOT a separate collection. Per Dexter's spec:
+ * - summaryItems drive the scannable "Early" / "Show day(s)" / dated card.
+ * - facts (already verified-only, filtered upstream in data-utils.js)
+ *   drive "All merch details."
+ * - Date grouping labels ("Early"/"Show days") are computed client-side by
+ *   comparing each summaryItem's dateRange to the event's show dates —
+ *   Firestore never supplies those labels directly.
+ * - If summaryItems is empty but verified facts exist (e.g. a fact saying
+ *   "not announced yet"), render the facts as a simple details list —
+ *   do NOT fabricate a schedule card. If neither exists, show the
+ *   "not announced" fallback.
+ */
+function classifyMerchDateRange(dateRange, showDates) {
+  if (!showDates || showDates.length === 0) return { kind: "formatted" };
+  const sorted = [...showDates].sort();
+  const firstShow = sorted[0];
+  const start = dateRange.startDate;
+  const end = dateRange.endDate || dateRange.startDate;
+
+  if (end < firstShow) return { kind: "early" };
+
+  const overlapCount = sorted.filter((d) => d >= start && d <= end).length;
+  if (overlapCount > 0) return { kind: overlapCount > 1 ? "showDays" : "showDay" };
+
+  return { kind: "formatted" };
+}
+
+const MERCH_GROUP_LABEL = { early: "Early", showDay: "Show day", showDays: "Show days" };
+
+function formatMerchDateRange(dateRange) {
+  const dates =
+    dateRange.endDate && dateRange.endDate !== dateRange.startDate
+      ? [dateRange.startDate, dateRange.endDate]
+      : [dateRange.startDate];
+  return formatDateRange(dates);
+}
+
+function renderMerchFact(fact) {
+  const el = document.createElement("div");
+  el.className = "transport-item";
+  el.innerHTML = `
+    <p>${fact.text}</p>
+    ${fact.link ? `<a href="${fact.link.url}" target="_blank" rel="noopener">${fact.link.label}</a>` : ""}
+  `;
+  return el;
+}
+
+function renderMerch(venue) {
+  const container = document.getElementById("merch-list");
+  const modes = (venue.transportation && venue.transportation.modes) || [];
+  const merch = modes.find((m) => m.id === "merch");
+
+  if (!merch) {
+    container.innerHTML = `<p class="unknown-text">Merch details haven't been announced yet.</p>`;
+    return;
+  }
+
+  const summaryItems = merch.summaryItems || [];
+  const facts = merch.facts || []; // already verified-only
+
+  if (summaryItems.length === 0 && facts.length === 0) {
+    container.innerHTML = `<p class="unknown-text">Merch details haven't been announced yet.</p>`;
+    return;
+  }
+
+  if (summaryItems.length > 0) {
+    const showDates = (venue.event.dates || []).slice();
+    const groups = new Map(); // ordered label -> items[]
+    summaryItems.forEach((item) => {
+      const { kind } = classifyMerchDateRange(item.dateRange, showDates);
+      const label = kind === "formatted" ? formatMerchDateRange(item.dateRange) : MERCH_GROUP_LABEL[kind];
+      if (!groups.has(label)) groups.set(label, []);
+      groups.get(label).push(item);
+    });
+
+    groups.forEach((items, label) => {
+      const groupEl = document.createElement("div");
+      groupEl.className = "merch-group";
+      const heading = document.createElement("p");
+      heading.className = "merch-group-label";
+      heading.textContent = label;
+      groupEl.appendChild(heading);
+      items.forEach((item) => {
+        const line = document.createElement("p");
+        line.className = "merch-summary-line";
+        line.textContent = `${item.location} · ${item.time}`;
+        groupEl.appendChild(line);
+      });
+      container.appendChild(groupEl);
+    });
+  } else {
+    // No schedule to show (e.g. Toronto: verified facts exist saying
+    // merch isn't announced yet, but no summaryItems) — don't fabricate
+    // dates/times, just label what follows as general merch details.
+    const note = document.createElement("p");
+    note.className = "merch-group-label";
+    note.textContent = "Merch details";
+    container.appendChild(note);
+  }
+
+  if (facts.length > 0) {
+    const details = document.createElement("details");
+    details.className = "merch-details";
+    const summary = document.createElement("summary");
+    summary.textContent = "All merch details";
+    details.appendChild(summary);
+    facts.forEach((f) => details.appendChild(renderMerchFact(f)));
+    container.appendChild(details);
+  }
 }
 
 function setDebugBadge(text) {
@@ -179,21 +338,18 @@ async function init() {
   document.getElementById("venue-name").textContent = `${venue.venue.venueName} — ${venue.venue.city}, ${venue.venue.state || ""}`.trim();
   document.getElementById("venue-meta").textContent = formatDateRange(venue.event.dates);
 
-  const policyList = document.getElementById("policy-list");
-  if (venue.policy.source === "none") {
-    policyList.innerHTML = `<p class="unknown-text">Venue policies for this event haven't been verified yet.</p>`;
-  } else {
-    venue.policy.rules.forEach((r) => policyList.appendChild(renderRule(r)));
-    if (venue.policy.additionalProhibitedItems.length) {
-      policyList.appendChild(renderAdditionalProhibited(venue.policy.additionalProhibitedItems));
-    }
-  }
-
+  renderHeroImage(venue);
   renderWeather(venue);
 
   const transportList = document.getElementById("transport-list");
   const t = venue.transportation;
   if (t) {
+    // Merch is stored as just another entry in transportation.modes
+    // (mode.id === "merch"), not a separate collection — excluded here so
+    // it doesn't also show up under "Getting there"; renderMerch() below
+    // finds it again and gives it its own section per Dexter's spec.
+    const transportModes = t.modes.filter((m) => m.id !== "merch");
+
     if (t.headline) {
       const p = document.createElement("p");
       p.className = "transport-headline";
@@ -208,9 +364,21 @@ async function init() {
       transportList.appendChild(linksWrap);
     }
     t.origins.forEach((o) => transportList.appendChild(renderOrigin(o)));
-    t.modes.forEach((m) => transportList.appendChild(renderTransportMode(m)));
-    if (!t.headline && t.origins.length === 0 && t.modes.length === 0) {
+    transportModes.forEach((m) => transportList.appendChild(renderTransportMode(m)));
+    if (!t.headline && t.origins.length === 0 && transportModes.length === 0) {
       transportList.innerHTML = `<p class="unknown-text">Transportation info for this venue hasn't been verified yet.</p>`;
+    }
+  }
+
+  renderMerch(venue);
+
+  const policyList = document.getElementById("policy-list");
+  if (venue.policy.source === "none") {
+    policyList.innerHTML = `<p class="unknown-text">Venue policies for this event haven't been verified yet.</p>`;
+  } else {
+    venue.policy.rules.forEach((r) => policyList.appendChild(renderRule(r)));
+    if (venue.policy.additionalProhibitedItems.length) {
+      policyList.appendChild(renderAdditionalProhibited(venue.policy.additionalProhibitedItems));
     }
   }
 }

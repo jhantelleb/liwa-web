@@ -7,17 +7,16 @@
 <meta name="description" content="Venue policies, weather, and transportation info for your event — the Liwa web view, built for Android and desktop.">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/live.css">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/favicon-180.png">
 </head>
 <body>
 
 <header class="site-header">
   <div class="wrap header-inner">
     <a href="/" class="logo" aria-label="Liwa home">
-      <svg class="logo-mark" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 24L20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M14 8H20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M22 4L23.2 6.8L26 8L23.2 9.2L22 12L20.8 9.2L18 8L20.8 6.8L22 4Z" fill="currentColor"/>
-      </svg>
+      <img class="logo-mark" src="assets/favicon-48.png" alt="" width="28" height="28">
       <span>Liwa</span>
     </a>
     <nav class="header-nav">
@@ -32,15 +31,15 @@
   <div id="venue-loading" class="loading-state">Loading venue info…</div>
 
   <div id="venue-content" class="venue-content" hidden>
+    <div id="hero-image-wrap" class="hero-image-wrap" hidden>
+      <img id="hero-image" class="hero-image" alt="">
+      <p id="hero-attribution" class="hero-attribution"></p>
+    </div>
+
     <div class="venue-header">
       <h1 id="venue-name"></h1>
       <p id="venue-meta" class="venue-meta"></p>
     </div>
-
-    <section class="live-section">
-      <h2>Venue policies</h2>
-      <div id="policy-list" class="policy-list"></div>
-    </section>
 
     <section class="live-section">
       <h2>Weather</h2>
@@ -50,6 +49,16 @@
     <section class="live-section">
       <h2>Getting there</h2>
       <div id="transport-list" class="transport-list"></div>
+    </section>
+
+    <section class="live-section">
+      <h2>Merch</h2>
+      <div id="merch-list" class="transport-list"></div>
+    </section>
+
+    <section class="live-section">
+      <h2>Policies</h2>
+      <div id="policy-list" class="policy-list"></div>
     </section>
 
     <p class="provenance-note">

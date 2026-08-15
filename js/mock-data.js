@@ -43,6 +43,27 @@ const MOCK_VENUE = {
   state: "TX",
   country: "US",
   coordinates: { latitude: 32.7473, longitude: -97.0945 },
+  artwork: {
+    hero: {
+      url: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1280&h=720&fit=crop",
+      width: 1280,
+      height: 720,
+      cropPosition: "center",
+    },
+    thumbnail: {
+      url: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=330&h=220&fit=crop",
+      width: 330,
+      height: 220,
+      cropPosition: "center",
+    },
+    attribution: {
+      creator: "Test Photographer",
+      licenseName: "CC BY-SA 4.0",
+      licenseURL: "https://creativecommons.org/licenses/by-sa/4.0/",
+      sourceURL: "https://commons.wikimedia.org/wiki/File:Example.jpg",
+      isCropped: true,
+    },
+  },
   transportation: {
     lastVerifiedAt: "2026-08-10",
     headline: {
@@ -146,6 +167,59 @@ const MOCK_VENUE = {
               title: "Fan forum thread",
               type: "thirdParty",
               excerpt: "Unverified rideshare pickup claim.",
+            },
+          },
+        ],
+      },
+      {
+        // Merch lives in the SAME transportation.modes array, id "merch"
+        // — not a separate collection. Confirmed by Jhantelle.
+        id: "merch",
+        label: "Merch",
+        summaryItems: [
+          {
+            dateRange: { startDate: "2026-08-14", endDate: "2026-08-14" },
+            location: "Choctaw Stadium",
+            time: "10 AM – 6 PM",
+            locationType: "exterior",
+          },
+          {
+            dateRange: { startDate: "2026-08-15", endDate: "2026-08-16" },
+            location: "Choctaw Stadium (exterior)",
+            time: "10 AM – 6:30 PM",
+            locationType: "exterior",
+          },
+          {
+            dateRange: { startDate: "2026-08-15", endDate: "2026-08-16" },
+            location: "AT&T Stadium (interior)",
+            time: "GA doors – after show",
+            locationType: "interior",
+          },
+        ],
+        facts: [
+          {
+            id: "weverse-pickup",
+            text: "Weverse Shop pickup is at Esports Stadium Arlington, 1200 Ballpark Way, from Friday, August 14 through Sunday, August 16, 11:00 AM to 6:00 PM CDT. Pickup purchases and timeslot reservations are handled exclusively through Weverse.",
+            provenance: "official",
+            verified: true,
+            link: { label: "Weverse Arlington pickup notice", url: "https://weverseshop.io" },
+            source: {
+              title: "Weverse Arlington Pickup Notice",
+              url: "https://weverseshop.io",
+              type: "officialWebsite",
+              excerpt: "Pickup location and hours.",
+            },
+          },
+          {
+            id: "interior-merch",
+            text: "Interior AT&T Stadium merchandise runs from GA doors through after the show at East Plaza, West Plaza, Sections 220, 225, 245, 250, 401, 424, 431, 454, Club South, and Club North. Merchandise sales are cashless — credit/debit cards and Apple Pay, Samsung Pay, or Google Pay are accepted.",
+            provenance: "official",
+            verified: true,
+            source: {
+              title: "Weverse Arlington Merchandise Notice",
+              url: "https://weverseshop.io",
+              type: "officialWebsite",
+              excerpt: "Interior merch booth locations and payment info.",
             },
           },
         ],

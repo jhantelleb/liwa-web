@@ -61,7 +61,7 @@ body {
   font-size: 18px;
 }
 
-.logo-mark { color: var(--amber-600); }
+.logo-mark { border-radius: 7px; display: block; }
 
 .header-nav {
   display: flex;
@@ -218,7 +218,21 @@ h2 {
   border-radius: 10px;
 }
 
-.venue-live { border-color: var(--amber-300); background: var(--amber-50); }
+.venue-live { border-color: var(--amber-300); background: var(--amber-50); padding: 0; }
+
+.venue-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+  transition: background 0.12s ease;
+}
+
+.venue-link:hover { background: var(--amber-100); }
 
 .venue-status {
   font-size: 12px;

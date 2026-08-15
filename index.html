@@ -6,17 +6,16 @@
 <title>Liwa — Know Before You Go</title>
 <meta name="description" content="Liwa tells you what you need to know before a live event: venue policies, weather, and how to get there. Every fact sourced. Unknown stays unknown.">
 <link rel="stylesheet" href="css/style.css">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/favicon-180.png">
 </head>
 <body>
 
 <header class="site-header">
   <div class="wrap header-inner">
     <a href="/" class="logo" aria-label="Liwa home">
-      <svg class="logo-mark" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 24L20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M14 8H20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M22 4L23.2 6.8L26 8L23.2 9.2L22 12L20.8 9.2L18 8L20.8 6.8L22 4Z" fill="currentColor"/>
-      </svg>
+      <img class="logo-mark" src="assets/favicon-48.png" alt="" width="28" height="28">
       <span>Liwa</span>
     </a>
     <nav class="header-nav">
@@ -87,9 +86,26 @@
       <h2>Where Liwa works today</h2>
       <p class="section-sub">We add venues one at a time, and only after every policy is sourced and verified.</p>
       <ul class="venue-list">
+        <!--
+          MANUAL, NOT DATA-DRIVEN: this whole list is hand-maintained HTML,
+          not read from Firestore. When AT&T Stadium's event wraps (after
+          Aug 16, 2026), manually:
+            1. Change its badge from "Live now" (venue-live class + plain
+               <span>) to "Covered" (venue-status-past class), matching
+               the pattern below for the other past venues.
+            2. Remove the <a> wrapper around it so it stops linking to
+               live.html — live.html currently only has real data for
+               AT&T anyway (VENUE_NAME is hardcoded in firestore-data.js),
+               so a stale link would be actively misleading, not just inert.
+          This is a known gap worth fixing post-LA: this list should read
+          live/covered status from Firestore instead of being hand-edited
+          every time an event starts or ends.
+        -->
         <li class="venue-item venue-live">
-          <span class="venue-status">Live now</span>
-          <span class="venue-name">AT&amp;T Stadium — Arlington, TX</span>
+          <a class="venue-link" href="live.html">
+            <span class="venue-status">Live now</span>
+            <span class="venue-name">AT&amp;T Stadium — Arlington, TX</span>
+          </a>
         </li>
         <li class="venue-item">
           <span class="venue-status venue-status-past">Covered</span>
