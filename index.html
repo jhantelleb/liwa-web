@@ -90,23 +90,29 @@
       <ul class="venue-list">
         <!--
           MANUAL, NOT DATA-DRIVEN: this whole list is hand-maintained HTML,
-          not read from Firestore. When AT&T Stadium's event wraps (after
-          Aug 16, 2026), manually:
+          not read from Firestore. live.html now takes a ?venue=<venueName>
+          param (js/firestore-data.js) so any live venue can be linked —
+          the venueName here must match the venueName field on that
+          venue's events/venuePolicies docs in Firestore EXACTLY.
+          When a venue's event wraps:
             1. Change its badge from "Live now" (venue-live class + plain
                <span>) to "Covered" (venue-status-past class), matching
                the pattern below for the other past venues.
-            2. Remove the <a> wrapper around it so it stops linking to
-               live.html — live.html currently only has real data for
-               AT&T anyway (VENUE_NAME is hardcoded in firestore-data.js),
-               so a stale link would be actively misleading, not just inert.
-          This is a known gap worth fixing post-LA: this list should read
-          live/covered status from Firestore instead of being hand-edited
-          every time an event starts or ends.
+            2. Remove the <a> wrapper around it so it stops linking out.
+          This is a known gap worth fixing eventually: this list should
+          read live/covered status from Firestore instead of being
+          hand-edited every time an event starts or ends.
         -->
         <li class="venue-item venue-live">
-          <a class="venue-link" href="live.html">
+          <a class="venue-link" href="live.html?venue=AT%26T%20Stadium">
             <span class="venue-status">Live now</span>
             <span class="venue-name">AT&amp;T Stadium — Arlington, TX</span>
+          </a>
+        </li>
+        <li class="venue-item venue-live">
+          <a class="venue-link" href="live.html?venue=Rogers%20Stadium">
+            <span class="venue-status">Live now</span>
+            <span class="venue-name">Rogers Stadium — Toronto, ON</span>
           </a>
         </li>
         <li class="venue-item">
