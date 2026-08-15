@@ -53,12 +53,23 @@ function renderAdditionalProhibited(items) {
   return el;
 }
 
+// Facts (and routes, and summary items) can carry a URL two ways: an
+// explicit `link` object, or just `source.url` with `source.title` as the
+// label. Real Firestore data mostly only has the latter — `link` is rare —
+// so every place we render a linkable fact needs to fall back to source.
+function factLink(fact) {
+  if (fact.link && fact.link.url) return { url: fact.link.url, label: fact.link.label || "Details" };
+  if (fact.source && fact.source.url) return { url: fact.source.url, label: fact.source.title || "View source" };
+  return null;
+}
+
 function renderTransportFact(fact) {
   const el = document.createElement("div");
   el.className = "transport-item";
+  const link = factLink(fact);
   el.innerHTML = `
     <p>${fact.text}</p>
-    ${fact.link ? `<a href="${fact.link.url}" target="_blank" rel="noopener">${fact.link.label}</a>` : ""}
+    ${link ? `<a href="${link.url}" target="_blank" rel="noopener">${link.label}</a>` : ""}
   `;
   return el;
 }
@@ -94,10 +105,11 @@ function renderOrigin(origin) {
   origin.routes.forEach((r) => {
     const el = document.createElement("div");
     el.className = "transport-item";
+    const link = factLink(r);
     el.innerHTML = `
       <p>${r.summary}${r.durationText ? ` (${r.durationText})` : ""}</p>
       ${r.steps && r.steps.length ? `<ol class="route-steps">${r.steps.map((s) => `<li>${s}</li>`).join("")}</ol>` : ""}
-      ${r.link ? `<a href="${r.link.url}" target="_blank" rel="noopener">${r.link.label}</a>` : ""}
+      ${link ? `<a href="${link.url}" target="_blank" rel="noopener">${link.label}</a>` : ""}
     `;
     wrap.appendChild(el);
   });
@@ -234,9 +246,10 @@ function formatMerchDateRange(dateRange) {
 function renderMerchFact(fact) {
   const el = document.createElement("div");
   el.className = "transport-item";
+  const link = factLink(fact);
   el.innerHTML = `
     <p>${fact.text}</p>
-    ${fact.link ? `<a href="${fact.link.url}" target="_blank" rel="noopener">${fact.link.label}</a>` : ""}
+    ${link ? `<a href="${link.url}" target="_blank" rel="noopener">${link.label}</a>` : ""}
   `;
   return el;
 }
@@ -293,8 +306,9 @@ function renderMerch(venue) {
       items.forEach((item) => {
         const line = document.createElement("p");
         line.className = "merch-summary-line";
-        if (item.link && item.link.url) {
-          line.innerHTML = `${item.location} · ${item.time} — <a href="${item.link.url}" target="_blank" rel="noopener">${item.link.label || "Details"}</a>`;
+        const link = factLink(item);
+        if (link) {
+          line.innerHTML = `${item.location} · ${item.time} — <a href="${link.url}" target="_blank" rel="noopener">${link.label}</a>`;
         } else {
           line.textContent = `${item.location} · ${item.time}`;
         }
